@@ -1,0 +1,156 @@
+<html>
+
+<body onload="body_Loaded();">
+
+	<div id="divUI">
+
+		<h3>Huffman Compressor</h3>
+		
+		<label>Uncompressed:</label><br />
+		<label>Text:</label><br />
+		<textarea id="textareaUncompressedText" cols="40" rows="4"></textarea><br />
+
+		<button onclick="buttonTextToBytes_Clicked();">Text to Bytes</button>
+		<button onclick="buttonBytesToText_Clicked();">Bytes to Text</button><br />
+
+		<label>Bytes:</label><br />
+		<textarea id="textareaUncompressedBytes" cols="34" rows="8"></textarea><br />
+
+		<button onclick="buttonCompress_Clicked();">Compress</button>
+		<button onclick="buttonDecompress_Clicked();">Decompress</button><br />
+
+		<label>Compressed:</label><br />
+		<label>Symbol Tree As JSON:</label><br />
+		<textarea id="textareaSymbolTreeAsJson" cols="60" rows="8"></textarea><br />
+		<label>Bit Length Counts and Symbols as Canonical String:</label><br />
+		<textarea id="textareaSymbolTable" cols="60" rows="8"></textarea><br />
+		<label>Data:</label><br />
+		<textarea id="textareaCompressed" cols="34" rows="8"></textarea><br />
+
+	</div>
+
+<script type="text/javascript">
+
+// ui events
+
+function body_Loaded()
+{
+	var stringToCompress =
+		"Your attention please, Mister Huffman has left the building!"
+		+ "  Attention, attention!"
+		+ "  I repeat, Mister Huffman has left the building!";
+	document.getElementById("textareaUncompressedText").value = stringToCompress;
+}
+
+function buttonBytesToText_Clicked()
+{
+	var d = document;
+
+	var textareaUncompressedBytes =
+		d.getElementById("textareaUncompressedBytes");
+	var bytesUncompressedAsString = textareaUncompressedBytes.value;
+	textareaUncompressedBytes.value = "";
+	var bytesUncompressedAsStrings = bytesUncompressedAsString.split(" ");
+	var bytesUncompressedAsText =
+		bytesUncompressedAsStrings.map(x => String.fromCharCode(parseInt(x, 16))).join("");
+
+	var textareaUncompressedText = d.getElementById("textareaUncompressedText");
+	textareaUncompressedText.value = bytesUncompressedAsText;
+}
+
+function buttonCompress_Clicked()
+{
+	var d = document;
+
+	var textareaUncompressed = d.getElementById("textareaUncompressedBytes");
+	var bytesToCompressAsString = textareaUncompressed.value;
+	textareaUncompressed.value = "";
+
+	if (bytesToCompressAsString.trim() == "")
+	{
+		alert("Nothing to compress!");
+		return;
+	}
+	var bytesToCompress = bytesToCompressAsString.split(" ").map(x => parseInt(x, 16));
+
+	var compressor = new CompressorHuffman();
+
+	var compressedData =
+		compressor.compressBytes(bytesToCompress);
+
+	var textareaSymbolTreeAsJson = d.getElementById("textareaSymbolTreeAsJson");
+	textareaSymbolTreeAsJson.value = compressedData.symbolTree.toStringJson();
+
+	var symbolTableAsStringCanonical = compressedData.symbolTableAsStringCanonical;
+	textareaSymbolTable.value = symbolTableAsStringCanonical;
+
+	var bytesCompressedAsBitString = compressedData.payloadCompressedAsBitString;
+
+	var textareaCompressed = d.getElementById("textareaCompressed");
+	textareaCompressed.value = bytesCompressedAsBitString;
+}
+
+function buttonDecompress_Clicked()
+{
+	var d = document;
+	var compressor = new CompressorHuffman();
+
+	var textareaSymbolTable = d.getElementById("textareaSymbolTable");
+	var textareaCompressed = d.getElementById("textareaCompressed");
+
+	var symbolTableAsCanonicalString = textareaSymbolTable.value;
+	var symbolTree =
+		compressor.symbolTableAsCanonicalStringToSymbolTree(symbolTableAsCanonicalString);
+	var bitStringToDecompress = textareaCompressed.value;
+
+	var symbolsDecompressed = compressor.decompressSymbolTreeAndBitStringIntoSymbols
+	(
+		symbolTree, bitStringToDecompress
+	);
+	var symbolsDecompressedAsString =
+		symbolsDecompressed.map(x => parseInt(x).toString(16)).join(" ");
+
+	var textareaUncompressedBytes = d.getElementById("textareaUncompressedBytes");
+	textareaUncompressedBytes.value = symbolsDecompressedAsString;
+
+	var textareaSymbolTreeAsJson = d.getElementById("textareaSymbolTreeAsJson");
+
+	textareaSymbolTable.value = "";
+	textareaCompressed.value = "";
+	textareaSymbolTreeAsJson.value = "";
+}
+
+function buttonTextToBytes_Clicked()
+{
+	var d = document;
+
+	var textareaUncompressed = d.getElementById("textareaUncompressedText");
+	var stringToCompress = textareaUncompressed.value;
+	textareaUncompressed.value = "";
+
+	var bytesToCompress = stringToCompress.split("").map(x => x.charCodeAt(0));
+
+	var bytesToCompressAsString = bytesToCompress.map(x => x.toString(16)).join(" ");
+
+	var textareaUncompressedBytes = d.getElementById("textareaUncompressedBytes");
+	textareaUncompressedBytes.value = bytesToCompressAsString;
+}
+
+</script>
+
+<!-- classes -->
+<script type="text/javascript" src="ByteStream.js"></script>
+<script type="text/javascript" src="CompressorHuffman.js"></script>
+<script type="text/javascript" src="CompressorHuffmanCompressedData.js"></script>
+<script type="text/javascript" src="CompressorHuffmanSymbolTreeNode.js"></script>
+
+<!-- tests -->
+<script type="text/javascript" src="TestFixture.js"></script>
+<script type="text/javascript">
+
+	new TestFixture().testsRun();
+
+</script>
+
+</body>
+</html>
